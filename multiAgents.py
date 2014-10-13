@@ -195,6 +195,8 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
       if (state.isLose() or state.isWin() or depth==0): 
           return self.evaluationFunction(state)
       legalMoves = state.getLegalActions(0)
+      if Directions.STOP in legalMoves:
+            legalMoves.remove(Directions.STOP)
       listNextStates = [state.generateSuccessor(0, action) for action in legalMoves]
       for nextState in listNextStates:
           alpha = max(self.minValuefunction(nextState, alpha, beta, depth-1, 1), alpha)
@@ -209,11 +211,11 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     "*** YOUR CODE HERE ***"
     numOfAgent = gameState.getNumAgents()
     legalMoves = gameState.getLegalActions(0)
-    trueDepth = self.depth * numOfAgent
+    #trueDepth = self.depth * numOfAgent
     
     listNextStates = [gameState.generateSuccessor(0,action) for action in legalMoves]
     # as long as beta is above the upper bound of the eval function
-    scores = [self.maxValuefunction(nextGameState, float('-Inf'), float('Inf'), trueDepth) for nextGameState in listNextStates] 
+    scores = [self.maxValuefunction(nextGameState, float('-Inf'), float('Inf'), self.depth) for nextGameState in listNextStates] 
     print scores
     bestScore = max(scores)
     print bestScore
