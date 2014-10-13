@@ -15,7 +15,7 @@
 
 from util import manhattanDistance
 from game import Directions
-import random, util
+import random, util, math
 
 from game import Agent
 
@@ -91,6 +91,14 @@ class ReflexAgent(Agent):
         if foodScore==0: returnScore=2.0+GhostScore
         else: returnScore=GhostScore+1.0/float(foodScore)
         return returnScore
+
+def disCmp(x,y,newPos):
+    if (util.manhattanDistance(newPos, x)-util.manhattanDistance(newPos, y))<0: return -1
+    else: 
+        if (util.manhattanDistance(newPos, x)-util.manhattanDistance(newPos, y))>0: return 1
+        else:
+            return 0
+
 
 def scoreEvaluationFunction(currentGameState):
     """
@@ -176,33 +184,27 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
   """
   Your minimax agent with alpha-beta pruning (question 3)
   """
-  def minValuefunction(self, state, alpha, beta, depth, ghostnum):
-      if (state.isLose() or state.isWin() or depth==0): 
+  def alphaBetafunction(self, state, agent, alpha, beta, depth):
+      if (state.isLose() or state.isWin() or depth==0):
           return self.evaluationFunction(state)
-      legalMoves = state.getLegalActions(ghostnum)
-      listNextStates = [state.generateSuccessor(ghostnum,action) for action in legalMoves]
-      for nextState in listNextStates:
-          if ghostnum == state.getNumAgents() - 1:
-              beta = min(self.maxValuefunction(nextState, alpha, beta, depth-1), beta)
-          else:
-              beta = min(self.minValuefunction(nextState, alpha, beta, depth, ghostnum+1), beta)
-          if (beta <= alpha):
-              return beta
-      return beta
-  
-
-  def maxValuefunction(self, state, alpha, beta, depth):
-      if (state.isLose() or state.isWin() or depth==0): 
-          return self.evaluationFunction(state)
-      legalMoves = state.getLegalActions(0)
-      if Directions.STOP in legalMoves:
-            legalMoves.remove(Directions.STOP)
-      listNextStates = [state.generateSuccessor(0, action) for action in legalMoves]
-      for nextState in listNextStates:
-          alpha = max(self.minValuefunction(nextState, alpha, beta, depth-1, 1), alpha)
-          if (alpha >= beta):
-             return alpha
-      return alpha
+      allAgents = state.getNumAgents()
+      legalMoves = state.getLegalActions(agent)
+      if agent != 0:
+          value = float('inf')
+          for action in legalMoves:
+              value = min(self.alphaBetafunction(state.generateSuccessor(agent, action), (agent+1)%allAgents, alpha, beta, depth-1), value)
+              beta = min(beta, value)
+              if value < alpha:
+                 break
+          return value
+      else:
+          value = float('-inf')
+          for action in legalMoves:
+              value = max(self.alphaBetafunction(state.generateSuccessor(agent, action), (agent+1)%allAgents, alpha, beta, depth-1), value)
+              alpha = max(alpha,value)
+              if value > beta:
+                 break
+          return value
 
   def getAction(self, gameState):
     """
@@ -211,11 +213,10 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
     "*** YOUR CODE HERE ***"
     numOfAgent = gameState.getNumAgents()
     legalMoves = gameState.getLegalActions(0)
-    #trueDepth = self.depth * numOfAgent
+    trueDepth = self.depth * numOfAgent
     
-    listNextStates = [gameState.generateSuccessor(0,action) for action in legalMoves]
     # as long as beta is above the upper bound of the eval function
-    scores = [self.maxValuefunction(nextGameState, float('-Inf'), float('Inf'), self.depth) for nextGameState in listNextStates] 
+    scores = [self.alphaBetafunction(gameState.generateSuccessor(0,action), 1, float('-Inf'), float('Inf'), trueDepth-1) for action in legalMoves] 
     print scores
     bestScore = max(scores)
     print bestScore
