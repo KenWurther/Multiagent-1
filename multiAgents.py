@@ -18,6 +18,7 @@ from game import Directions
 import random, util
 
 from game import Agent
+import re
 
 class ReflexAgent(Agent):
     """
@@ -69,28 +70,108 @@ class ReflexAgent(Agent):
         """
         # Useful information you can extract from a GameState (pacman.py)
         returnScore = float(0)
+	# Possible states of Pacmann
         successorGameState = currentGameState.generatePacmanSuccessor(action)
+
+	#Old and new state of Pacmann
+	oldPos = currentGameState.getPacmanPosition()
         newPos = successorGameState.getPacmanPosition()
+
+	# Old and new states of Food
         newFood = successorGameState.getFood()
         oldFood = currentGameState.getFood()
+
+	# Old and new states of Ghosts
+	oldGhostStates = currentGameState.getGhostStates()
         newGhostStates = successorGameState.getGhostStates()
+
+	# Manhattan distance between pacmann and ghost in old and new states
+	old_m_dist_PG = new_m_dist_PG = 0
+
+	# Manhattan distance between pacmann and food in old and new states
+	old_m_dist_PF = new_m_dist_PF = 9999
+
+	# Has resident scared timer value
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
+	#Local variables
+	dist = []
+	score = 0
+
+	print "Successor game state ",successorGameState
+	print "oldPos ", oldPos
+	print "newPos ",newPos
+	print "newFood ", newFood
+	print "oldFood ", oldFood
+	print "newGhostStates "
+	for state in newGhostStates:
+		print state
+	print "oldGhostStates "
+	for state in oldGhostStates:
+		print state
+	print "newScardTimes ",newScaredTimes
+
+	# Calculate old and new manhattan distance between pacmann and ghost
+	for state in newGhostStates:
+		str_state = str(state)
+		print "str_state", str_state
+		g_coord = [int(s) for s in re.findall('\\d+', str_state)]
+		
+		# This is a hack. Some state are (2, 7), some are (2.0, 7.0)
+		# So remove 0's twice if present
+		if 0 in g_coord:
+			g_coord.remove(0)
+		if 0 in g_coord:
+			g_coord.remove(0)
+
+		print "gccord", g_coord
+		gx = g_coord[0]
+		gy = g_coord[1]
+		#If ghost position is successor state, return lowest score
+		if ((gx,gy) == newPos):
+			return -9999
+		old_m_dist_PG += manhattanDistance((gx,gy), oldPos)
+		new_m_dist_PG += manhattanDistance((gx,gy), newPos)
+		print "old man distt", old_m_dist_PG
+		print "new man distt", new_m_dist_PG
+
+	# Calculate manhattan distance between pacmann and food in old state
+	for food in oldFood.asList():
+		print food
+		dist.append(manhattanDistance(food, oldPos))
+	old_m_dist_PF = min(dist)
+
+	# Calculate manhattan distance between pacmann and food in successor state
+	dist = []
+	for food in newFood.asList():
+		print food
+		dist.append(manhattanDistance(food, newPos))
+	if dist:
+		new_m_dist_PF = min(dist)
+	else:
+		new_m_dist_PF = 0
+
+	# Score calculation
+	ghost_is_far = 1 if (new_m_dist_PG >= 3) else 0
+	is_food_eaten = (len(oldFood.asList()) - len(newFood.asList()))
+
+	print "old man distt food", old_m_dist_PF
+	print "new man distt food", new_m_dist_PF
+	print "ghost is far?", ghost_is_far
+	print "is food waten?", is_food_eaten
+
+	if ghost_is_far:
+		score += 6*(old_m_dist_PF - new_m_dist_PF)
+		score += 50*is_food_eaten # if food is eaten, then bump up the score
+	else:
+		# Ghost is in the vicnity
+		score += 2*(old_m_dist_PF - new_m_dist_PF)
+		score += 10*(new_m_dist_PG - old_m_dist_PG)
+		#score += 10*is_food_eaten
+
+	print "score", score
+	return score
         "*** YOUR CODE HERE ***"
-        foodList=oldFood.asList()
-   
-        foodList.sort(lambda x,y: util.manhattanDistance(newPos, x)-util.manhattanDistance(newPos, y))
-        foodScore=util.manhattanDistance(newPos, foodList[0])
-        GhostPositions=[Ghost.getPosition() for Ghost in newGhostStates]
-        if len(GhostPositions) ==0 : GhostScore=0
-        else: 
-            GhostPositions.sort(lambda x,y: disCmp(x,y,newPos))
-            if util.manhattanDistance(newPos, GhostPositions[0])==0: return -99 
-            else:
-                GhostScore=2*-1.0/util.manhattanDistance(newPos, GhostPositions[0])
-        if foodScore==0: returnScore=2.0+GhostScore
-        else: returnScore=GhostScore+1.0/float(foodScore)
-        return returnScore
 
 def scoreEvaluationFunction(currentGameState):
     """
