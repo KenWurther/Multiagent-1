@@ -96,25 +96,10 @@ class ReflexAgent(Agent):
 
 	#Local variables
 	dist = []
-	score = 0
-
-	print "Successor game state ",successorGameState
-	print "oldPos ", oldPos
-	print "newPos ",newPos
-	print "newFood ", newFood
-	print "oldFood ", oldFood
-	print "newGhostStates "
-	for state in newGhostStates:
-		print state
-	print "oldGhostStates "
-	for state in oldGhostStates:
-		print state
-	print "newScardTimes ",newScaredTimes
 
 	# Calculate old and new manhattan distance between pacmann and ghost
 	for state in newGhostStates:
 		str_state = str(state)
-		print "str_state", str_state
 		g_coord = [int(s) for s in re.findall('\\d+', str_state)]
 		
 		# This is a hack. Some state are (2, 7), some are (2.0, 7.0)
@@ -124,27 +109,24 @@ class ReflexAgent(Agent):
 		if 0 in g_coord:
 			g_coord.remove(0)
 
-		print "gccord", g_coord
 		gx = g_coord[0]
 		gy = g_coord[1]
+
 		#If ghost position is successor state, return lowest score
 		if ((gx,gy) == newPos):
 			return -9999
+
 		old_m_dist_PG += manhattanDistance((gx,gy), oldPos)
 		new_m_dist_PG += manhattanDistance((gx,gy), newPos)
-		print "old man distt", old_m_dist_PG
-		print "new man distt", new_m_dist_PG
 
 	# Calculate manhattan distance between pacmann and food in old state
 	for food in oldFood.asList():
-		print food
 		dist.append(manhattanDistance(food, oldPos))
 	old_m_dist_PF = min(dist)
 
 	# Calculate manhattan distance between pacmann and food in successor state
 	dist = []
 	for food in newFood.asList():
-		print food
 		dist.append(manhattanDistance(food, newPos))
 	if dist:
 		new_m_dist_PF = min(dist)
@@ -155,22 +137,16 @@ class ReflexAgent(Agent):
 	ghost_is_far = 1 if (new_m_dist_PG >= 3) else 0
 	is_food_eaten = (len(oldFood.asList()) - len(newFood.asList()))
 
-	print "old man distt food", old_m_dist_PF
-	print "new man distt food", new_m_dist_PF
-	print "ghost is far?", ghost_is_far
-	print "is food waten?", is_food_eaten
-
 	if ghost_is_far:
-		score += 6*(old_m_dist_PF - new_m_dist_PF)
-		score += 50*is_food_eaten # if food is eaten, then bump up the score
+		returnScore += 6*(old_m_dist_PF - new_m_dist_PF)
+		returnScore += 50*is_food_eaten # if food is eaten, then bump up the score
 	else:
 		# Ghost is in the vicnity
-		score += 2*(old_m_dist_PF - new_m_dist_PF)
-		score += 10*(new_m_dist_PG - old_m_dist_PG)
+		returnScore += 2*(old_m_dist_PF - new_m_dist_PF)
+		returnScore += 10*(new_m_dist_PG - old_m_dist_PG)
 		#score += 10*is_food_eaten
 
-	print "score", score
-	return score
+	return returnScore
         "*** YOUR CODE HERE ***"
 
 def disCmp(x,y,newPos):
