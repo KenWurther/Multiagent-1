@@ -149,14 +149,6 @@ class ReflexAgent(Agent):
 	return returnScore
         "*** YOUR CODE HERE ***"
 
-def disCmp(x,y,newPos):
-    if (util.manhattanDistance(newPos, x)-util.manhattanDistance(newPos, y))<0: return -1
-    else: 
-        if (util.manhattanDistance(newPos, x)-util.manhattanDistance(newPos, y))>0: return 1
-        else:
-            return 0
-
-
 def scoreEvaluationFunction(currentGameState):
     """
       This default evaluation function just returns the score of the state.
@@ -188,54 +180,62 @@ class MultiAgentSearchAgent(Agent):
         self.depth = int(depth)
 
 class MinimaxAgent(MultiAgentSearchAgent):
-    """
-      Your minimax agent (question 2)
-    """
-    def minmaxfunction(self, state, agent, depth):
-        legalMoves = state.getLegalActions(agent)
-        if Directions.STOP in legalMoves:
-            legalMoves.remove(Directions.STOP)
-        allAgents = state.getNumAgents()
-        if depth == 0 or state.isWin() or state.isLose():
-            return self.evaluationFunction(state)
-        if agent == 0:
-            return max([self.minmaxfunction(state.generateSuccessor(agent, action), (agent+1)%allAgents, depth-1) for action in legalMoves])
-        else:
-            return min([self.minmaxfunction(state.generateSuccessor(agent, action), (agent+1)%allAgents, depth-1) for action in legalMoves])
+    
+    def MiniMax(self, node, depth, agent, tot_agents):
+
+	# Terminal state
+	if depth == 0 or node.isWin() or node.isLose():
+		return self.evaluationFunction(node)
+
+	# Pacman
+	if agent == 0:
+        	#pdb.set_trace()
+		bestval = float("-inf")
+        	actions = node.getLegalActions(agent)
+		#Pacman can have STOP in his next actions. So remove it
+        	if Directions.STOP in actions:
+            		actions.remove(Directions.STOP)
+
+        	for action in actions:
+            		childState = node.generateSuccessor(agent, action)
+            		#print "Pacman In agent ",agent,"calling agent+1",(agent+1)%tot_agents,"direction ",action
+            		#print "new Pacmann state",childState
+            		val = self.MiniMax(childState, depth - 1, (agent + 1)%tot_agents, tot_agents)
+            		bestval = max(bestval, val)
+            		#print "Pacman Bestval =",bestval,"agent ",agent
+        	return bestval
+    	else:
+        	#pdb.set_trace()
+        	bestval = float("inf")
+        	actions = node.getLegalActions(agent)
+        	if Directions.STOP in actions:
+            		actions.remove(Directions.STOP)
+        	for action in actions:
+           		childState = node.generateSuccessor(agent, action)
+            		#print "In agent ",agent,"calling agent+1",(agent+1)%tot_agents,"direction ",action
+            		#print "new ghost state",childState
+            		val = self.MiniMax(childState, depth - 1, (agent + 1)%tot_agents, tot_agents)
+            		bestval = min(bestval, val)
+		return bestval
 
     def getAction(self, gameState):
         """
-          Returns the minimax action from the current gameState using self.depth
-          and self.evaluationFunction.
-
-          Here are some method calls that might be useful when implementing minimax.
-
-          gameState.getLegalActions(agentIndex):
-            Returns a list of legal actions for an agent
-            agentIndex=0 means Pacman, ghosts are >= 1
-
-          gameState.generateSuccessor(agentIndex, action):
-            Returns the successor game state after an agent takes an action
-
-          gameState.getNumAgents():
-            Returns the total number of agents in the game
         """
-        "*** YOUR CODE HERE ***"
-        "Add more of your code here if you want to"
-		# Collect legal moves and successor states
-        legalMoves = gameState.getLegalActions(0)
-        if Directions.STOP in legalMoves:
-            legalMoves.remove(Directions.STOP)
-        scores =  [self.minmaxfunction(gameState.generateSuccessor(0, action), 1, self.depth) for action in legalMoves]
-        print scores
-        bestScore = max(scores)
-        print bestScore
-        bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
-        chosenIndex = random.choice(bestIndices) # Pick randomly among the best
-        # Choose one of the best actions
-        return legalMoves[chosenIndex]
-		
+	# Total number of agents
+        agents = gameState.getNumAgents()
+	# depth
+        d = self.depth*agents
 
+	# Get actions and remove STOP if present
+        actions = gameState.getLegalActions(0)
+        if Directions.STOP in actions:
+            actions.remove(Directions.STOP)
+
+        val = [self.MiniMax(gameState.generateSuccessor(0, action), d -1 , 1, agents) for action in actions]
+	bestval = max(val)
+	indices = [index for index in range(len(val)) if val[index] == bestval]
+        
+	return actions[random.choice(indices)]
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
   """
